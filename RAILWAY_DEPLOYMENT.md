@@ -10,7 +10,19 @@ Guía rápida para publicar tu API en Railway (gratis y fácil).
 
 ## 🚂 Pasos para Deployment
 
-### Paso 1: Subir el Código a GitHub
+### Paso 1: Preparar el Código
+
+**IMPORTANTE**: Asegúrate de que el archivo `.env` NO esté en tu repositorio:
+
+```bash
+# Verificar que .env esté en .gitignore
+cat .gitignore
+
+# Si el archivo .env existe localmente y está siendo rastreado por git, eliminarlo:
+git rm --cached .env
+```
+
+### Paso 2: Subir el Código a GitHub
 
 1. **Inicializa Git** (si no lo has hecho):
    ```bash
@@ -33,7 +45,7 @@ Guía rápida para publicar tu API en Railway (gratis y fácil).
    git push -u origin main
    ```
 
-### Paso 2: Configurar Railway
+### Paso 3: Configurar Railway
 
 1. **Ve a [Railway.app](https://railway.app)**
    - Click en "Login" y usa tu cuenta de GitHub
@@ -64,7 +76,7 @@ Guía rápida para publicar tu API en Railway (gratis y fácil).
    - En la sección "Domains", click en "Generate Domain"
    - Railway te dará una URL como: `https://assistant-api-production-xxxx.up.railway.app`
 
-### Paso 3: ¡Listo! Probar tu API
+### Paso 4: ¡Listo! Probar tu API
 
 Tu API ya está en línea. Pruébala:
 

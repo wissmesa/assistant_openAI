@@ -3,17 +3,21 @@ from openai import OpenAI
 import re
 import time
 import os
-from dotenv import load_dotenv
 
-# Cargar variables de entorno
-load_dotenv()
+# Cargar variables de entorno solo si existe el archivo .env (desarrollo local)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except:
+    # En producción (Railway), las variables ya están en el entorno
+    pass
 
 # Configuración
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Verificar que la API key esté configurada
-if not OPENAI_API_KEY or OPENAI_API_KEY == "YOUR_OPENAI_API_KEY_HERE":
-    raise ValueError("Por favor configura tu OPENAI_API_KEY en el archivo .env")
+if not OPENAI_API_KEY:
+    raise ValueError("Por favor configura tu OPENAI_API_KEY como variable de entorno")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
