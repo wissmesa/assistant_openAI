@@ -29,6 +29,18 @@ def clean_query(text):
     return re.sub(r'[^\w\s]', '', text.lower()).strip()
 
 
+# Función para limpiar la respuesta del asistente
+def clean_assistant_response(text):
+    """Clean the assistant response by removing asterisks and document references."""
+    # Eliminar referencias a documentos en formato 【...†source】 o 【...】
+    text = re.sub(r'【[^】]*】', '', text)
+    # Eliminar todos los asteriscos
+    text = text.replace('*', '')
+    # Limpiar espacios múltiples que puedan quedar
+    text = re.sub(r'\s+', ' ', text)
+    return text.strip()
+
+
 @app.route('/chat', methods=['POST'])
 def chat():
     """
@@ -114,8 +126,11 @@ def chat():
                         break
             
             if assistant_response:
+                # Limpiar la respuesta del asistente
+                cleaned_response = clean_assistant_response(assistant_response)
+                
                 return jsonify({
-                    "response": assistant_response,
+                    "response": cleaned_response,
                     "normalized_query": normalized_query,
                     "status": "success",
                     "thread_id": run.thread_id
@@ -243,8 +258,11 @@ def chat_continue():
                         break
             
             if assistant_response:
+                # Limpiar la respuesta del asistente
+                cleaned_response = clean_assistant_response(assistant_response)
+                
                 return jsonify({
-                    "response": assistant_response,
+                    "response": cleaned_response,
                     "normalized_query": normalized_query,
                     "status": "success",
                     "thread_id": thread_id

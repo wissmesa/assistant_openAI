@@ -91,3 +91,6 @@ print("✅ /chat - Crea nuevo thread")
 print("✅ /chat/continue - Continúa conversación con thread_id")
 print(f"\n🌍 API: {PRODUCTION_URL}")
 
+
+
+

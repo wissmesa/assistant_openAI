@@ -258,6 +258,18 @@ def clean_query(text):
     """Normalize the user query before sending it to the assistant."""
     return re.sub(r'[^\w\s]', '', text.lower()).strip()
 
+
+# Función para limpiar la respuesta del asistente
+def clean_assistant_response(text):
+    """Clean the assistant response by removing asterisks and document references."""
+    # Eliminar referencias a documentos en formato 【...†source】 o 【...】
+    text = re.sub(r'【[^】]*】', '', text)
+    # Eliminar todos los asteriscos
+    text = text.replace('*', '')
+    # Limpiar espacios múltiples que puedan quedar
+    text = re.sub(r'\s+', ' ', text)
+    return text.strip()
+
 # Test queries
 # test_queries = [
 #     "Help me find my next home.",
@@ -373,7 +385,9 @@ for query in test_queries:
             if message.role == "assistant":
                 for content in message.content:
                     if hasattr(content, 'text'):
-                        print(f"✅ Respuesta: {content.text.value}\n")
+                        # Limpiar la respuesta del asistente
+                        cleaned_response = clean_assistant_response(content.text.value)
+                        print(f"✅ Respuesta: {cleaned_response}\n")
     else:
         print(f"❌ Error: {response.status}")
         if response.last_error:
