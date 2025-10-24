@@ -4,21 +4,13 @@ import time
 import os
 from dotenv import load_dotenv
 
-# Cargar variables de entorno
-load_dotenv()
+# Cargar variables de entorno solo si existe el archivo .env (desarrollo local)
+try:
+    load_dotenv()
+except:
+    # En producción o si hay problemas con .env, las variables ya están en el entorno
+    pass
 
-# Obtener configuración desde variables de entorno
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-VECTOR_STORE_ID = os.getenv("VECTOR_STORE_ID")
-
-# Verificar que las variables estén configuradas
-if not OPENAI_API_KEY or OPENAI_API_KEY == "YOUR_OPENAI_API_KEY_HERE":
-    raise ValueError("Por favor configura tu OPENAI_API_KEY en el archivo .env")
-
-if not VECTOR_STORE_ID:
-    raise ValueError("Por favor configura tu VECTOR_STORE_ID en el archivo .env")
-
-client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Prompt optimizado para RAG con mejores prácticas
 RAG_OPTIMIZED_INSTRUCTIONS = """# Identity
@@ -41,6 +33,28 @@ When specific information is not in your knowledge base, respond:
 - Pets: Non-vicious pets allowed
 - Fencing: Not allowed
 - Address: 69 Foothills Circle, Gillette, WY 82716
+
+# Rules & Regulations Document (CRITICAL - Priority Search)
+For ANY questions related to the following topics, ALWAYS search the "Rules & Regulations Foothills Mobile" document FIRST:
+- Lease Application (application process, requirements, approval criteria)
+- Move-In and Move-Out Procedures (procedures, checklists, requirements)
+- Vehicles and Parking (parking rules, vehicle regulations, restrictions)
+- Lot Maintenance and Appearance (maintenance requirements, landscaping, appearance standards)
+- Guests and Visitors (guest policies, visitor rules, stay duration)
+- Use of Common Areas (common area usage, restrictions, hours)
+- Pet Policy (pet rules, restrictions, breed limitations, fees)
+- General Conduct (community conduct, noise policies, behavior expectations)
+- Security Deposits (deposit amounts, refund policies, deductions)
+- Fines and Enforcement Policy (violation fines, enforcement procedures, consequences)
+- Fencing & Structures (fencing rules, structure regulations, shed policies)
+- Effective Date (policy effective dates, updates)
+
+When users ask about these topics or related synonyms:
+1. Search the "Rules & Regulations Foothills Mobile" document specifically
+2. Provide exact information as written in the document
+3. Quote specific rules, amounts, or requirements directly
+4. If information is not found in the document, use standard fallback response
+5. Never invent or assume policy details
 
 # Field Mapping (When Users Ask About)
 "Cost of the house" / "Price" / "Overall cost" / "Home price" → Mobile Home Price
@@ -141,6 +155,17 @@ When user sends a greeting message without a specific question:
   * "What's your budget range that you're comfortable with?"
 - Provide pricing information based on their clarification
 
+## Price Objections ("That's too expensive" / "That's too much" / "Too costly" / "Can't afford that")
+When a user indicates that a home's price is too high:
+1. Acknowledge their concern warmly: "I understand, let's find something that fits your budget better."
+2. Ask for their budget range: "What price range are you looking for?" or "What's your budget that you're comfortable with?"
+3. Once they provide a budget range:
+   - Search knowledge base for homes within that price range
+   - Consider maintaining the same bed/bath configuration if they previously specified one
+   - If homes found: Offer 1-2 options that match their budget and preferences
+   - If no homes found in their range: "I don't currently have homes available in that price range. The closest option I have is [mention nearest affordable option]. Would that work for you?"
+4. Keep the tone helpful and solution-oriented, not apologetic
+
 ## When User Requests Specific Bed/Bath Configuration (e.g., "you have a 3/2", "2/1", "3 2")
 - ALWAYS interpret two numbers as: [First number] = Bedrooms, [Second number] = Bathrooms
 - "3/2" or "3 2" or "you have a 3/2" = 3 bedrooms AND 2 bathrooms
@@ -228,7 +253,7 @@ print("🔧 Creando nuevo assistant con prompt optimizado para RAG...")
 
 # Crear el nuevo asistente con configuración óptima
 new_assistant = client.beta.assistants.create(
-    name="Christina - RAG Optimized",
+    name="Christina - RAG Optimized New Document",
     instructions=RAG_OPTIMIZED_INSTRUCTIONS,
     model="gpt-4o-mini",
     tools=[{
@@ -241,7 +266,7 @@ new_assistant = client.beta.assistants.create(
         }
     }],
     tool_resources={
-        "file_search": {"vector_store_ids": [VECTOR_STORE_ID]}
+        "file_search": {"vector_store_ids": ['vs_68f948333dbc8191a4c1c0e12f86c77e']}
     },
     temperature=0.7,
     top_p=1.0
@@ -250,7 +275,7 @@ new_assistant = client.beta.assistants.create(
 print(f"✅ Nuevo assistant RAG optimizado creado: {new_assistant.id}")
 print(f"📝 Nombre: {new_assistant.name}")
 print(f"🤖 Modelo: {new_assistant.model}")
-print(f"📚 Vector Store: {VECTOR_STORE_ID}")
+print(f"📚 Vector Store: {'vs_68f948333dbc8191a4c1c0e12f86c77e'}")
 print(f"🎯 Score Threshold: 0.35")
 
 # Función para normalizar consultas
@@ -312,39 +337,27 @@ def clean_assistant_response(text):
 # ]
 
 test_queries = [
-    "you have a 3/2",
-    "hi",
     "i want to know what homes you have with 3/2",
-    # "What's the overall cost of the house 335?",
-    # "What times do you have openings?",
-    # "He's wondering how much the house costs",
-    # "Is that house only for rent?",
-    # "Ok thank you! Do you guys do rent to own at all?",
-    # "Would he be able to do rent to own on that house?",
-    # "Would he have to do a down-payment on it if he did rent to own?",
-    # "What openings do you have for tomorrow?",
-    # "Hi! How do we go about renting this out?",
-    # "I would like to know what the requirements are to be able to rent it. It would be $1000 plus utiilites correct?",
-    # "What would requirements be? And would you be down payment? How much is lot rent? Would you do payments?",
-    # "Contact info?",
-    # "Info please",
-    # "Send more info please",
-    # "Floor plan pics?",
-    # "Deposits needed? Address",
-    # "Info on other one as well please",
-    # "Is this still available?",
-    # "Can I look at it tomorrow?",
-    # "And are pets allowed, i have an older lab,",
-    # "How much is the deposit",
-    # "Would you have any available time friday?",
-    # "What kind of services do you provide?",
-    # "Can you tell me about the services you offer?",
-    # "What do you specialize in?",
-    # "Could you describe the services your company provides?",
-    # "What type of solutions do you offer?",
-    # "How can your company help me?",
-    # "What does your business do?",
-    # "Which services are available through your company?",
+    "What is the application fee and is it refundable?",
+    "Do I need to provide proof of homeowner's insurance?",
+    "How much notice do I need to give before moving out?",
+    "Can management enter my home without permission?",
+    "What is the speed limit in the park?",
+    "Can I park my RV next to my home?",
+    "Are ATVs or dirt bikes allowed in the park?",
+    "Can I hang clothes outside to dry?",
+    "What time am I allowed to water my lawn?",
+    "How long can guests stay before they need to register?",
+    "Can I sublet part of my home?",
+    "Are Pit Bulls or German Shepherds allowed?",
+    "What size pets are allowed in the park?",
+    "Do my pets need to be spayed or neutered?",
+    "Can I have a yard sale?",
+    "What are the quiet hours?",
+    "When will I get my security deposit back?",
+    "How much is the fine for speeding?",
+    "Can I build a fence around my lot?",
+    "Do I need approval to build a shed or deck?",
 ]
 
 
